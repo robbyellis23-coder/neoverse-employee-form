@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NeoVerse Enterprise — Employee Profile Form</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Outfit', sans-serif; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx8T-y-edNvzUDRN7DgHe-2oiKW07M3PSgwb1SA-kiOjfI_c0N405IPAwEPe0LNNsGOHQ/exec";
+
+const LOCATIONS = ["D'Iberville", "Ocean Springs", "Bay St. Louis", "Gulfport", "NeoFit (2nd Floor DIB)", "NeoGolf D'Iberville", "NeoGolf Location 2", "Multiple / Float"];
+const BUSINESSES = ["NeoLife Physical Therapy", "NeoFit Performance", "NeoGolf", "NeoVerse Enterprise (Cross-Business)"];
+const EMPLOYMENT_TYPES = ["Full-Time (W2)", "Part-Time (W2)", "Contract (1099)", "PRN / As Needed"];
+const DEPARTMENTS = ["Clinical - PT/DPT", "Clinical - PTA", "Clinical - Aquatics", "Support Staff / Front Desk", "Billing & Collections", "Administration / Executive", "Coaching / Performance", "Marketing / Media", "Operations / Management", "Other"];
+const CREDENTIAL_OPTIONS = ["DPT", "PT", "PTA", "CSCS", "NASM-CPT", "ACE-CPT", "ACSM-EP", "ATC", "OCS", "SCS", "NCS", "GCS", "CMP", "CKTP", "Dry Needling Cert", "BLS/CPR", "HIPAA Certified", "CPA", "PGA", "Other"];
+
+const defaultForm = {
+  fullName: "", preferredName: "", credentials: [], credentialOther: "",
+  title: "", department: "", business: "", location: "", employmentType: "",
+  startDate: "", previousEmployer: "", previousRole: "",
+  email: "", phone: "", emergencyContact: "", emergencyPhone: "",
+  specialties: "", patientPopulations: "", equipmentProficiencies: "",
+  reportsTo: "", directReports: "", primaryResponsibilities: "",
+  strengths: "", growthAreas: "", professionalGoals: "", continuingEd: "",
+  personalInterests: "", additionalNotes: "",
+  managerPerformanceNotes: "", managerDevelopmentPlan: "",
+  managerCompensationNotes: "", managerAdditionalContext: "",
+  managerCompletedBy: ""
+};
+
+function Section({ title, subtitle, children, color = "#0D2137" }) {
+  return (
+    <div style={{ marginBottom: 32 }}>
+      <div style={{
+        background: color, color: "#fff", padding: "14px 20px", borderRadius: "8px 8px 0 0",
+        fontFamily: "'Outfit', sans-serif", fontSize: 18, fontWeight: 700, letterSpacing: 0.5
+      }}>
+        {title}
+        {subtitle && <div style={{ fontSize: 12, fontWeight: 400, opacity: 0.75, marginTop: 2 }}>{subtitle}</div>}
+      </div>
+      <div style={{
+        background: "#fff", border: "1px solid #d1d5db", borderTop: "none",
+        borderRadius: "0 0 8px 8px", padding: "20px 20px 8px"
+      }}>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function Field({ label, required, children, hint }) {
+  return (
+    <div style={{ marginBottom: 18 }}>
+      <label style={{
+        display: "block", fontFamily: "'Outfit', sans-serif", fontSize: 13,
+        fontWeight: 600, color: "#1e293b", marginBottom: 4
+      }}>
+        {label} {required && <span style={{ color: "#dc2626" }}>*</span>}
+      </label>
+      {hint && <div style={{ fontSize: 11, color: "#64748b", marginBottom: 4 }}>{hint}</div>}
+      {children}
+    </div>
+  );
+}
+
+const inputStyle = {
+  width: "100%", padding: "10px 12px", border: "1px solid #cbd5e1", borderRadius: 6,
+  fontSize: 14, fontFamily: "'Outfit', sans-serif", background: "#f8fafc",
+  boxSizing: "border-box", outline: "none", transition: "border-color 0.2s"
+};
+const textareaStyle = { ...inputStyle, minHeight: 72, resize: "vertical" };
+const selectStyle = { ...inputStyle, appearance: "auto", cursor: "pointer" };
+
+function NeoVerseEmployeeForm() {
+  const [form, setForm] = React.useState(defaultForm);
+  const [showManager, setShowManager] = React.useState(false);
+  const [copied, setCopied] = React.useState(false);
+  const [submitting, setSubmitting] = React.useState(false);
+  const [submitStatus, setSubmitStatus] = React.useState(null);
+
+  const set = (field) => (e) => setForm({ ...form, [field]: e.target.value });
+
+  const toggleCredential = (cred) => {
+    const current = form.credentials;
+    if (current.includes(cred)) {
+      setForm({ ...form, credentials: current.filter(c => c !== cred) });
+    } else {
+      setForm({ ...form, credentials: [...current, cred] });
+    }
+  };
+
+  const generateExport = () => {
+    const lines = [];
+    lines.push("===============================================");
+    lines.push("NEOVERSE ENTERPRISE \u2014 EMPLOYEE PROFILE");
+    lines.push(`Generated: ${new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}`);
+    lines.push("===============================================");
+    lines.push("");
+    lines.push("\u2500\u2500 IDENTITY \u2500\u2500");
+    lines.push(`Full Name: ${form.fullName || "(not provided)"}`);
+    lines.push(`Preferred Name: ${form.preferredName || "(same)"}`);
+    lines.push(`Credentials: ${form.credentials.length > 0 ? form.credentials.join(", ") : "(none listed)"}${form.credentialOther ? `, ${form.credentialOther}` : ""}`);
+    lines.push(`Email: ${form.email || "(not provided)"}`);
+    lines.push(`Phone: ${form.phone || "(not provided)"}`);
+    lines.push(`Emergency Contact: ${form.emergencyContact || "(not provided)"} \u2014 ${form.emergencyPhone || ""}`);
+    lines.push("");
+    lines.push("\u2500\u2500 EMPLOYMENT \u2500\u2500");
+    lines.push(`Title: ${form.title || "(not provided)"}`);
+    lines.push(`Department: ${form.department || "(not provided)"}`);
+    lines.push(`Business Unit: ${form.business || "(not provided)"}`);
+    lines.push(`Primary Location: ${form.location || "(not provided)"}`);
+    lines.push(`Employment Type: ${form.employmentType || "(not provided)"}`);
+    lines.push(`Start Date: ${form.startDate || "(not provided)"}`);
+    lines.push(`Previous Employer: ${form.previousEmployer || "(not provided)"}`);
+    lines.push(`Previous Role: ${form.previousRole || "(not provided)"}`);
+    lines.push("");
+    lines.push("\u2500\u2500 ROLE & REPORTING \u2500\u2500");
+    lines.push(`Reports To: ${form.reportsTo || "(not provided)"}`);
+    lines.push(`Direct Reports: ${form.directReports || "(none)"}`);
+    lines.push(`Primary Responsibilities: ${form.primaryResponsibilities || "(not provided)"}`);
+    lines.push("");
+    lines.push("\u2500\u2500 CLINICAL / PROFESSIONAL \u2500\u2500");
+    lines.push(`Specialties: ${form.specialties || "(not provided)"}`);
+    lines.push(`Patient Populations: ${form.patientPopulations || "(not provided)"}`);
+    lines.push(`Equipment Proficiencies: ${form.equipmentProficiencies || "(not provided)"}`);
+    lines.push("");
+    lines.push("\u2500\u2500 DEVELOPMENT \u2500\u2500");
+    lines.push(`Strengths: ${form.strengths || "(not provided)"}`);
+    lines.push(`Growth Areas: ${form.growthAreas || "(not provided)"}`);
+    lines.push(`Professional Goals: ${form.professionalGoals || "(not provided)"}`);
+    lines.push(`Continuing Education: ${form.continuingEd || "(not provided)"}`);
+    lines.push("");
+    lines.push("\u2500\u2500 PERSONAL \u2500\u2500");
+    lines.push(`Interests: ${form.personalInterests || "(not provided)"}`);
+    lines.push(`Additional Notes: ${form.additionalNotes || "(not provided)"}`);
+    if (showManager && (form.managerPerformanceNotes || form.managerDevelopmentPlan || form.managerCompensationNotes || form.managerAdditionalContext)) {
+      lines.push("");
+      lines.push("\u2500\u2500 MANAGER NOTES (CONFIDENTIAL) \u2500\u2500");
+      lines.push(`Completed By: ${form.managerCompletedBy || "(not specified)"}`);
+      lines.push(`Performance Notes: ${form.managerPerformanceNotes || "(not provided)"}`);
+      lines.push(`Development Plan: ${form.managerDevelopmentPlan || "(not provided)"}`);
+      lines.push(`Compensation Notes: ${form.managerCompensationNotes || "(not provided)"}`);
+      lines.push(`Additional Context: ${form.managerAdditionalContext || "(not provided)"}`);
+    }
+    lines.push("");
+    lines.push("===============================================");
+    lines.push("END OF PROFILE");
+    lines.push("===============================================");
+    return lines.join("\n");
+  };
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(generateExport()).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+    });
+  };
+
+  const handleDownload = () => {
+    const name = form.fullName ? form.fullName.replace(/[^a-zA-Z0-9]/g, "_") : "Employee";
+    const blob = new Blob([generateExport()], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `NeoVerse_Profile_${name}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleSubmitToNeoVerse = async () => {
+    if (!form.fullName.trim()) {
+      setSubmitStatus("missing");
+      setTimeout(() => setSubmitStatus(null), 3000);
+      return;
+    }
+    setSubmitting(true);
+    setSubmitStatus(null);
+    try {
+      const response = await fetch(SCRIPT_URL, {
+        method: "POST",
+        body: JSON.stringify(form),
+      });
+      const result = await response.json();
+      if (result.status === "success") {
+        setSubmitStatus("success");
+      } else {
+        setSubmitStatus("error");
+      }
+    } catch (err) {
+      try {
+        await fetch(SCRIPT_URL, {
+          method: "POST",
+          mode: "no-cors",
+          body: JSON.stringify(form),
+        });
+        setSubmitStatus("sent");
+      } catch (err2) {
+        setSubmitStatus("error");
+      }
+    } finally {
+      setSubmitting(false);
+      setTimeout(() => setSubmitStatus(null), 4000);
+    }
+  };
+
+  const submitButtonStyle = () => {
+    if (submitting) return { background: "#6b7280", cursor: "wait" };
+    if (submitStatus === "success" || submitStatus === "sent") return { background: "#16a34a", cursor: "default" };
+    if (submitStatus === "error") return { background: "#dc2626", cursor: "default" };
+    if (submitStatus === "missing") return { background: "#f59e0b", cursor: "default" };
+    return { background: "linear-gradient(135deg, #2563eb 0%, #7c3aed 100%)", cursor: "pointer" };
+  };
+
+  const submitButtonText = () => {
+    if (submitting) return "\u23F3 Submitting...";
+    if (submitStatus === "success") return "\u2713 Saved to NeoVerse!";
+    if (submitStatus === "sent") return "\u2713 Sent to NeoVerse!";
+    if (submitStatus === "error") return "\u2715 Error \u2014 Try Again";
+    if (submitStatus === "missing") return "\u26A0 Name Required";
+    return "\uD83D\uDE80 Submit to NeoVerse";
+  };
+
+  return (
+    <div style={{
+      minHeight: "100vh", background: "linear-gradient(135deg, #0D2137 0%, #163252 40%, #1a4068 100%)",
+      padding: "24px 16px", fontFamily: "'Outfit', sans-serif"
+    }}>
+      <div style={{ maxWidth: 680, margin: "0 auto" }}>
+        <div style={{ textAlign: "center", marginBottom: 32 }}>
+          <div style={{
+            display: "inline-block", background: "rgba(255,255,255,0.08)", backdropFilter: "blur(12px)",
+            border: "1px solid rgba(255,255,255,0.15)", borderRadius: 16, padding: "28px 40px"
+          }}>
+            <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: 3, color: "#60a5fa", textTransform: "uppercase", marginBottom: 6 }}>
+              NeoVerse Enterprise
+            </div>
+            <h1 style={{ fontSize: 28, fontWeight: 800, color: "#fff", margin: "0 0 6px", letterSpacing: -0.5 }}>
+              Employee Profile Form
+            </h1>
+            <p style={{ fontSize: 13, color: "#94a3b8", margin: 0 }}>
+              Fill out what you can — Robby & Rebecca will complete the rest
+            </p>
+          </div>
+        </div>
+
+        <div>
+          <Section title="Identity" subtitle="Your basic information">
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+              <Field label="Full Legal Name" required>
+                <input style={inputStyle} value={form.fullName} onChange={set("fullName")} placeholder="First Last" />
+              </Field>
+              <Field label="Preferred Name" hint="Leave blank if same as legal name">
+                <input style={inputStyle} value={form.preferredName} onChange={set("preferredName")} placeholder="Nickname or preferred" />
+              </Field>
+            </div>
+            <Field label="Credentials & Certifications" hint="Check all that apply">
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 8 }}>
+                {CREDENTIAL_OPTIONS.map(c => (
+                  <button key={c} onClick={() => toggleCredential(c)} style={{
+                    padding: "6px 12px", borderRadius: 20, fontSize: 12, fontWeight: 500, cursor: "pointer",
+                    border: form.credentials.includes(c) ? "2px solid #2563eb" : "1px solid #cbd5e1",
+                    background: form.credentials.includes(c) ? "#dbeafe" : "#f8fafc",
+                    color: form.credentials.includes(c) ? "#1e40af" : "#475569",
+                    fontFamily: "'Outfit', sans-serif", transition: "all 0.15s"
+                  }}>
+                    {form.credentials.includes(c) ? "\u2713 " : ""}{c}
+                  </button>
+                ))}
+              </div>
+              {form.credentials.includes("Other") && (
+                <input style={inputStyle} value={form.credentialOther} onChange={set("credentialOther")} placeholder="List other credentials..." />
+              )}
+            </Field>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+              <Field label="Email"><input style={inputStyle} type="email" value={form.email} onChange={set("email")} placeholder="name@neolifept.com" /></Field>
+              <Field label="Phone"><input style={inputStyle} type="tel" value={form.phone} onChange={set("phone")} placeholder="(228) 555-0000" /></Field>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+              <Field label="Emergency Contact Name"><input style={inputStyle} value={form.emergencyContact} onChange={set("emergencyContact")} placeholder="Full name" /></Field>
+              <Field label="Emergency Contact Phone"><input style={inputStyle} type="tel" value={form.emergencyPhone} onChange={set("emergencyPhone")} placeholder="(228) 555-0000" /></Field>
+            </div>
+          </Section>
+
+          <Section title="Employment" subtitle="Your role at NeoVerse" color="#1e40af">
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+              <Field label="Job Title" required><input style={inputStyle} value={form.title} onChange={set("title")} placeholder="e.g. Clinic Director, PTA, Head Coach" /></Field>
+              <Field label="Department" required><select style={selectStyle} value={form.department} onChange={set("department")}><option value="">Select...</option>{DEPARTMENTS.map(d => <option key={d} value={d}>{d}</option>)}</select></Field>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+              <Field label="Business Unit" required><select style={selectStyle} value={form.business} onChange={set("business")}><option value="">Select...</option>{BUSINESSES.map(b => <option key={b} value={b}>{b}</option>)}</select></Field>
+              <Field label="Primary Location" required><select style={selectStyle} value={form.location} onChange={set("location")}><option value="">Select...</option>{LOCATIONS.map(l => <option key={l} value={l}>{l}</option>)}</select></Field>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
+              <Field label="Employment Type"><select style={selectStyle} value={form.employmentType} onChange={set("employmentType")}><option value="">Select...</option>{EMPLOYMENT_TYPES.map(e => <option key={e} value={e}>{e}</option>)}</select></Field>
+              <Field label="Start Date"><input style={inputStyle} type="date" value={form.startDate} onChange={set("startDate")} /></Field>
+              <Field label="Reports To"><input style={inputStyle} value={form.reportsTo} onChange={set("reportsTo")} placeholder="Supervisor name" /></Field>
+            </div>
+            <Field label="Direct Reports" hint="List anyone who reports to you, or write 'None'"><input style={inputStyle} value={form.directReports} onChange={set("directReports")} placeholder="Name(s) or None" /></Field>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+              <Field label="Previous Employer" hint="Before NeoVerse"><input style={inputStyle} value={form.previousEmployer} onChange={set("previousEmployer")} placeholder="Company name" /></Field>
+              <Field label="Previous Role"><input style={inputStyle} value={form.previousRole} onChange={set("previousRole")} placeholder="Job title" /></Field>
+            </div>
+            <Field label="Primary Responsibilities" hint="What are your main day-to-day duties?"><textarea style={textareaStyle} value={form.primaryResponsibilities} onChange={set("primaryResponsibilities")} placeholder="Describe your typical responsibilities..." /></Field>
+          </Section>
+
+          <Section title="Clinical & Professional" subtitle="Your expertise and specializations" color="#0e7490">
+            <Field label="Clinical Specialties" hint="Areas you're strongest in or most experienced with"><textarea style={textareaStyle} value={form.specialties} onChange={set("specialties")} placeholder="e.g. Orthopedic post-op, sports rehab, vestibular, geriatrics, aquatic therapy, performance training..." /></Field>
+            <Field label="Patient Populations" hint="Who do you work with most?"><textarea style={textareaStyle} value={form.patientPopulations} onChange={set("patientPopulations")} placeholder="e.g. Athletes, post-surgical, Medicare seniors, military/Tricare, pediatric..." /></Field>
+            <Field label="Equipment / Technology Proficiencies" hint="Clinical tools, software, machines you're skilled with"><textarea style={textareaStyle} value={form.equipmentProficiencies} onChange={set("equipmentProficiencies")} placeholder="e.g. Prompt Health EMR, TrackMan, AlterG, dry needling tools, aquatic treadmill, Normatec..." /></Field>
+          </Section>
+
+          <Section title="Growth & Development" subtitle="Your strengths and where you're headed" color="#7c3aed">
+            <Field label="Strengths" hint="What are you best at?"><textarea style={textareaStyle} value={form.strengths} onChange={set("strengths")} placeholder="What do coworkers or patients consistently recognize you for?" /></Field>
+            <Field label="Growth Areas" hint="Where do you want to improve? (No wrong answers)"><textarea style={textareaStyle} value={form.growthAreas} onChange={set("growthAreas")} placeholder="Skills you're developing or areas you'd like training in..." /></Field>
+            <Field label="Professional Goals" hint="Where do you see yourself in 1-3 years?"><textarea style={textareaStyle} value={form.professionalGoals} onChange={set("professionalGoals")} placeholder="Career aspirations, certifications you want, leadership goals..." /></Field>
+            <Field label="Recent / Upcoming Continuing Education"><textarea style={textareaStyle} value={form.continuingEd} onChange={set("continuingEd")} placeholder="CEU courses completed or planned, conferences attended..." /></Field>
+          </Section>
+
+          <Section title="Personal" subtitle="Optional — helps the team connect" color="#475569">
+            <Field label="Interests & Hobbies" hint="What do you enjoy outside of work?"><textarea style={textareaStyle} value={form.personalInterests} onChange={set("personalInterests")} placeholder="Sports, hobbies, family, community involvement..." /></Field>
+            <Field label="Anything Else?" hint="Anything the team or AI system should know about you"><textarea style={textareaStyle} value={form.additionalNotes} onChange={set("additionalNotes")} placeholder="Scheduling preferences, long-term plans, fun facts..." /></Field>
+          </Section>
+
+          <div style={{ textAlign: "center", marginBottom: 24 }}>
+            <button onClick={() => setShowManager(!showManager)} style={{
+              padding: "12px 28px", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer",
+              border: "1px solid rgba(255,255,255,0.25)", background: "rgba(255,255,255,0.08)",
+              color: "#e2e8f0", fontFamily: "'Outfit', sans-serif", transition: "all 0.2s",
+              backdropFilter: "blur(8px)"
+            }}>
+              {showManager ? "\u25BE Hide" : "\u25B8 Show"} Manager-Only Section (Robby & Rebecca)
+            </button>
+          </div>
+
+          {showManager && (
+            <Section title="Manager Notes" subtitle="CONFIDENTIAL — Robby & Rebecca only" color="#991b1b">
+              <Field label="Completed By"><input style={inputStyle} value={form.managerCompletedBy} onChange={set("managerCompletedBy")} placeholder="Your name" /></Field>
+              <Field label="Performance Notes" hint="Current performance assessment, recent observations"><textarea style={textareaStyle} value={form.managerPerformanceNotes} onChange={set("managerPerformanceNotes")} placeholder="How is this person performing? Key wins, concerns..." /></Field>
+              <Field label="Development Plan" hint="What's the plan for this person's growth?"><textarea style={textareaStyle} value={form.managerDevelopmentPlan} onChange={set("managerDevelopmentPlan")} placeholder="Promotion timeline, skill development, mentoring plans..." /></Field>
+              <Field label="Compensation Notes" hint="Pay rate, bonus eligibility, raise history or plans"><textarea style={textareaStyle} value={form.managerCompensationNotes} onChange={set("managerCompensationNotes")} placeholder="Current comp, last raise, next review date..." /></Field>
+              <Field label="Additional Context" hint="Anything else leadership should know"><textarea style={textareaStyle} value={form.managerAdditionalContext} onChange={set("managerAdditionalContext")} placeholder="Retention risk, personal circumstances, relocation plans, partnership potential..." /></Field>
+            </Section>
+          )}
+        </div>
+
+        <div style={{ display: "flex", gap: 12, justifyContent: "center", marginTop: 8, marginBottom: 16, flexWrap: "wrap" }}>
+          <button onClick={handleSubmitToNeoVerse} disabled={submitting} style={{
+            padding: "16px 36px", borderRadius: 10, fontSize: 16, fontWeight: 700, cursor: "pointer",
+            border: "none", color: "#fff", fontFamily: "'Outfit', sans-serif", transition: "all 0.2s", minWidth: 240,
+            boxShadow: "0 4px 14px rgba(37,99,235,0.4)", ...submitButtonStyle()
+          }}>
+            {submitButtonText()}
+          </button>
+        </div>
+
+        <div style={{ display: "flex", gap: 12, justifyContent: "center", marginBottom: 40, flexWrap: "wrap" }}>
+          <button onClick={handleCopy} style={{
+            padding: "12px 28px", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer",
+            border: "1px solid rgba(255,255,255,0.3)", background: "rgba(255,255,255,0.1)",
+            color: "#e2e8f0", fontFamily: "'Outfit', sans-serif", transition: "all 0.2s", minWidth: 160
+          }}>
+            {copied ? "\u2713 Copied!" : "Copy to Clipboard"}
+          </button>
+          <button onClick={handleDownload} style={{
+            padding: "12px 28px", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer",
+            border: "1px solid rgba(255,255,255,0.3)", background: "rgba(255,255,255,0.1)",
+            color: "#e2e8f0", fontFamily: "'Outfit', sans-serif", transition: "all 0.2s", minWidth: 160
+          }}>
+            Download as .txt
+          </button>
+        </div>
+
+        <div style={{
+          background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)",
+          borderRadius: 12, padding: 20, textAlign: "center", marginBottom: 32
+        }}>
+          <div style={{ fontSize: 13, color: "#94a3b8", lineHeight: 1.7 }}>
+            <strong style={{ color: "#e2e8f0" }}>How to submit:</strong> Fill out what you can, then click
+            <strong style={{ color: "#818cf8" }}> 🚀 Submit to NeoVerse </strong> to save your profile directly to the system.
+            <br />You can also use Copy/Download as a backup. Robby & Rebecca will fill in any gaps.
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<NeoVerseEmployeeForm />);
+  </script>
+</body>
+</html>
